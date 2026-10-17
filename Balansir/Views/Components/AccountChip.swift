@@ -8,6 +8,8 @@ struct AccountChip: View {
     let colorHex: String?
     let balance: Decimal
     let isActive: Bool
+    /// Карточка долга (чип «Долги», контрагент, §4.11): сумма со знаком «+»/«−» и цветом долга.
+    var isDebt: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -25,7 +27,7 @@ struct AccountChip: View {
                         .truncationMode(.tail)
                         .foregroundStyle(titleColor)
                 }
-                Text(MoneyFormatter.compact(balance))
+                Text(isDebt ? MoneyFormatter.compactDebt(balance) : MoneyFormatter.compact(balance))
                     .font(Theme.Font.caption)
                     .monospacedDigit()
                     .foregroundStyle(balanceColor)
@@ -54,11 +56,13 @@ struct AccountChip: View {
             // Активная карточка: тёмный фон, белый баланс (минус читается по знаку, цветом не выделяем).
             return Theme.Colors.background.opacity(0.7)
         }
+        if isDebt { return Theme.debtColor(for: balance) }
         return balance < 0 ? Theme.Colors.negativeBalance : Theme.Colors.ink2
     }
 
     /// VoiceOver: «Название, баланс −N ₽» — символ валюты и минус VoiceOver читает словами языка.
     private var accessibilityLabel: String {
-        String(localized: "\(title), balance \(MoneyFormatter.balance(balance))")
+        if isDebt { return String(localized: "\(title), debt \(MoneyFormatter.debt(balance))") }
+        return String(localized: "\(title), balance \(MoneyFormatter.balance(balance))")
     }
 }

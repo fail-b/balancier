@@ -190,6 +190,12 @@ struct HomeView: View {
             accountFilterChips
                 .padding(.top, Theme.Spacing.xl)
 
+            if viewModel.isDebtFilterActive {
+                counterpartyChips
+                    .padding(.top, Theme.Spacing.s)
+                    .transition(.opacity)
+            }
+
             if viewModel.entriesByDay.isEmpty {
                 emptyStateView
             } else {
@@ -249,7 +255,51 @@ struct HomeView: View {
 
     // MARK: - Hero Card
 
+    @ViewBuilder
     private var heroCard: some View {
+        if viewModel.isDebtFilterActive {
+            debtHeroCard
+        } else {
+            expenseHeroCard
+        }
+    }
+
+    /// Hero в режиме долгов (§4.11): «Мне должны» и «Я должен» — по всем контрагентам или по выбранному.
+    private var debtHeroCard: some View {
+        let totals = viewModel.heroDebtTotals
+        return HStack(alignment: .lastTextBaseline) {
+            VStack(alignment: .leading, spacing: Theme.Row.textSpacing) {
+                Text("Owed to me")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.ink2)
+                Text(MoneyFormatter.format(totals.owedToMe))
+                    .font(Theme.Font.heroAmount)
+                    .tracking(Theme.Font.Tracking.heroAmount)
+                    .foregroundStyle(Theme.Colors.debtOwedToMe)
+                    .lineLimit(1)
+                    .minimumScaleFactor(Theme.Size.summaryMinScale)
+            }
+            Spacer(minLength: Theme.Spacing.s)
+            VStack(alignment: .trailing, spacing: Theme.Row.textSpacing) {
+                Text("I owe")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.ink2)
+                Text(MoneyFormatter.format(totals.iOwe))
+                    .font(Theme.Font.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.Colors.debtIOwe)
+                    .lineLimit(1)
+                    .minimumScaleFactor(Theme.Size.summaryMinScale)
+            }
+        }
+        .padding(.horizontal, Theme.Spacing.xl)
+        .padding(.vertical, Theme.Hero.verticalPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.Colors.card, in: RoundedRectangle(cornerRadius: Theme.Radius.hero))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var expenseHeroCard: some View {
         Button {
             selectedTab = .statistics
         } label: {
@@ -328,9 +378,9 @@ struct HomeView: View {
                         title: String(localized: "All"),
                         colorHex: nil,
                         balance: viewModel.totalBalance,
-                        isActive: viewModel.selectedAccountId == nil
+                        isActive: viewModel.isAllSelected
                     ) {
-                        viewModel.selectedAccountId = nil
+                        withAnimation(.snappy) { viewModel.selectAll() }
                     }
                     ForEach(viewModel.accounts) { account in
                         AccountChip(
@@ -339,9 +389,21 @@ struct HomeView: View {
                             balance: viewModel.balances[account.id] ?? 0,
                             isActive: viewModel.selectedAccountId == account.id
                         ) {
-                            viewModel.selectedAccountId = viewModel.selectedAccountId == account.id ? nil : account.id
+                            withAnimation(.snappy) { viewModel.toggleAccount(account.id) }
                         }
                         .id(account.id)
+                    }
+                    // «Долги» — в конце карусели (§4.11): все долги, ниже — карусель контрагентов.
+                    if viewModel.showsDebtsChip {
+                        AccountChip(
+                            title: String(localized: "Debts"),
+                            colorHex: nil,
+                            balance: viewModel.debtTotals.net,
+                            isActive: viewModel.isDebtFilterActive,
+                            isDebt: true
+                        ) {
+                            withAnimation(.snappy) { viewModel.toggleDebts() }
+                        }
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.l)
@@ -358,6 +420,26 @@ struct HomeView: View {
                 withAnimation(.snappy) { proxy.scrollTo(id, anchor: .center) }
                 viewModel.didRevealAccount()
             }
+        }
+    }
+
+    /// Вторая карусель — контрагенты с долгами (при фильтре «Долги», §4.11).
+    private var counterpartyChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Theme.Spacing.s) {
+                ForEach(viewModel.counterparties) { counterparty in
+                    AccountChip(
+                        title: counterparty.name,
+                        colorHex: counterparty.colorHex,
+                        balance: viewModel.debt(for: counterparty),
+                        isActive: viewModel.selectedCounterpartyId == counterparty.id,
+                        isDebt: true
+                    ) {
+                        withAnimation(.snappy) { viewModel.toggleCounterparty(counterparty.id) }
+                    }
+                }
+            }
+            .padding(.horizontal, Theme.Spacing.l)
         }
     }
 
