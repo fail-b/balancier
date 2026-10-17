@@ -15,6 +15,8 @@ struct AccountsView: View {
     @State private var showingEditCategory = false
     @State private var addCategoryVM: CategoryFormViewModel?
     @State private var editCategoryVM: CategoryFormViewModel?
+    /// Модальный экран «Контрагенты» (тап по карточке «Долги», §4.11).
+    @State private var counterpartiesVM: CounterpartiesViewModel?
 
     var body: some View {
         NavigationStack {
@@ -32,6 +34,9 @@ struct AccountsView: View {
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Colors.ink2)
                         .padding(.horizontal, Theme.Spacing.xs)
+
+                    debtsCard
+                        .padding(.top, Theme.Spacing.s)
 
                     categoriesSection
                         .padding(.top, Theme.Spacing.xl)
@@ -59,6 +64,9 @@ struct AccountsView: View {
             }
             .sheet(item: $accountFormVM, onDismiss: { Task { await viewModel.load() } }) { vm in
                 AccountFormView(viewModel: vm)
+            }
+            .sheet(item: $counterpartiesVM, onDismiss: { Task { await viewModel.load() } }) { vm in
+                CounterpartiesView(viewModel: vm)
             }
             .sheet(isPresented: $showingAddCategory, onDismiss: { Task { await viewModel.load() } }) {
                 if let vm = addCategoryVM { CategoryFormView(viewModel: vm) }
@@ -139,6 +147,51 @@ struct AccountsView: View {
         }
         .background(Theme.Colors.card)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    // MARK: - Долги (§4.11)
+
+    /// Карточка «Долги»: число контрагентов и итог со знаком. Полный список — в модальном экране.
+    private var debtsCard: some View {
+        let net = viewModel.debtTotals.net
+        return Button {
+            viewModel.dismissUndo()
+            counterpartiesVM = viewModel.makeCounterpartiesViewModel()
+        } label: {
+            HStack(spacing: Theme.Spacing.m) {
+                Circle()
+                    .fill(Theme.Colors.fill)
+                    .frame(width: Theme.Row.iconSize, height: Theme.Row.iconSize)
+                    .overlay {
+                        AppIcon.image(named: AppIcon.debts)
+                            .font(Theme.Font.rowIcon)
+                            .foregroundStyle(Theme.Colors.ink)
+                    }
+                VStack(alignment: .leading, spacing: Theme.Row.textSpacing) {
+                    Text("Debts")
+                        .font(Theme.Font.rowTitle)
+                        .foregroundStyle(Theme.Colors.ink)
+                    Text("Counterparties: \(viewModel.counterparties.count)")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.ink2)
+                }
+                Spacer(minLength: Theme.Spacing.s)
+                Text(MoneyFormatter.debt(net))
+                    .font(Theme.Font.rowAmount)
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.debtColor(for: net))
+                    .lineLimit(1)
+                    .minimumScaleFactor(Theme.Size.summaryMinScale)
+                AppIcon.image(named: AppIcon.forward)
+                    .font(Theme.Font.caption.weight(.semibold))
+                    .foregroundStyle(Theme.Colors.ink2)
+            }
+            .padding(.horizontal, Theme.Spacing.l)
+            .padding(.vertical, Theme.Spacing.m)
+            .background(Theme.Colors.card, in: RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        }
+        .buttonStyle(.plain)
     }
 
     /// Плашка «Счёт/Категория … скрыт(а) · Отменить» — одна на экран, для последнего скрытия.
