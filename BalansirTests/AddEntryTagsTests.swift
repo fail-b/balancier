@@ -26,9 +26,9 @@ struct AddEntryTagsTests {
         let tagRepo = MockTagRepository()
         tagRepo.tags = tags
         let vm = AddEntryViewModel(entry: editing, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
-                                   tagRepo: tagRepo, locale: TestLocale.ru)
+                                   tagRepo: tagRepo, counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
-        return Env(vm: vm, tagRepo: tagRepo, entryRepo: entryRepo, account: account, category: category)
+        return Env(vm: vm, tagRepo: tagRepo, counterpartyRepo: MockCounterpartyRepository(), entryRepo: entryRepo, account: account, category: category)
     }
 
     @Test func тап_выбирает_повторный_снимает() async {

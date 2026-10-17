@@ -29,6 +29,9 @@ enum AppIcon {
     static let edit = "pencil"
     /// «Скрыть» счёт/категорию (мягкое удаление).
     static let archive = "archivebox"
+    /// Контрагент долга по умолчанию и карточка «Долги» на вкладке «Счета» (§4.11).
+    static let counterparty = "person"
+    static let debts = "person.2"
 
     // Категории (пикеры)
     static let accountPicker: [String] = [
@@ -45,6 +48,13 @@ enum AppIcon {
         "figure.run", "building.2",
         "banknote", "laptopcomputer", "percent",
         "arrow.uturn.left", "ellipsis.circle",
+    ]
+
+    /// Иконки контрагента (§4.11).
+    static let counterpartyPicker: [String] = [
+        "person", "person.2", "figure.2.and.child.holdinghands", "heart",
+        "house", "briefcase", "building.2", "cup.and.saucer",
+        "airplane", "car", "gift", "sportscourt",
     ]
 
     // Рендерит иконку: сначала ищет кастомный ассет, затем SF Symbol

@@ -82,7 +82,7 @@ struct HomeMonthFilterTests {
         accountRepo.accounts = accounts
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(),
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(),
                                locale: TestLocale.ru)
         await vm.load()
         return vm
@@ -181,7 +181,7 @@ struct AddEntryDateTests {
     private func makeVM(_ entryRepo: MockEntryRepository) async -> AddEntryViewModel {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [AccountModel.makeTest()]
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.amountString = "100"
         return vm

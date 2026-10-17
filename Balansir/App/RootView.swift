@@ -9,6 +9,7 @@ struct RootView: View {
     let categoryRepo: any CategoryRepository
     let entryRepo: any EntryRepository
     let tagRepo: any TagRepository
+    let counterpartyRepo: any CounterpartyRepository
 
     var body: some View {
         ZStack {
@@ -17,6 +18,7 @@ struct RootView: View {
                 categoryRepo: categoryRepo,
                 entryRepo: entryRepo,
                 tagRepo: tagRepo,
+                counterpartyRepo: counterpartyRepo,
                 isLaunchFinished: !launchVM.isSplashVisible
             )
             .accessibilityHidden(launchVM.isSplashVisible)

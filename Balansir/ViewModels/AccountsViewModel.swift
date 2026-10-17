@@ -35,8 +35,15 @@ final class AccountsViewModel: Identifiable {
     private let accountRepo: any AccountRepository
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
+    private let counterpartyRepo: any CounterpartyRepository
 
-    init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository) {
+    /// Контрагенты (без удалённых) и их долги — для карточки «Долги» (§4.11).
+    private(set) var counterparties: [CounterpartyModel] = []
+    private var debtBalances: [UUID: Decimal] = [:]
+
+    init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
+         counterpartyRepo: any CounterpartyRepository) {
+        self.counterpartyRepo = counterpartyRepo
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
@@ -55,15 +62,23 @@ final class AccountsViewModel: Identifiable {
         balances[account.id] ?? account.initialBalance
     }
 
+    /// Итоги долгов для карточки «Долги».
+    var debtTotals: DebtService.Totals {
+        DebtService.totals(of: counterparties, balances: debtBalances)
+    }
+
     func load() async {
         do {
             async let a = accountRepo.fetchAll()
             async let c = categoryRepo.fetchAll()
             async let e = entryRepo.fetchAll()
-            let (accs, cats, entries) = try await (a, c, e)
+            async let p = counterpartyRepo.fetchAll()
+            let (accs, cats, entries, cps) = try await (a, c, e, p)
             accounts = accs
             categories = cats
             balances = BalanceService.computeBalances(accounts: accs, entries: entries)
+            counterparties = cps.filter { !$0.isArchived }
+            debtBalances = DebtService.balances(entries: entries)
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -124,6 +139,11 @@ final class AccountsViewModel: Identifiable {
 
     func makeAccountFormViewModel(for account: AccountModel?) -> AccountFormViewModel {
         AccountFormViewModel(account: account, accountRepo: accountRepo)
+    }
+
+    /// Модальный экран «Контрагенты» (тап по карточке «Долги»).
+    func makeCounterpartiesViewModel() -> CounterpartiesViewModel {
+        CounterpartiesViewModel(counterpartyRepo: counterpartyRepo, entryRepo: entryRepo)
     }
 
     func makeCategoryFormViewModel(for category: CategoryModel?) -> CategoryFormViewModel {

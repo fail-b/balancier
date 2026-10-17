@@ -26,6 +26,22 @@ enum MoneyFormatter {
         (amount < 0 ? "\u{2212}" : "") + format(amount, currency: currency, locale: locale)
     }
 
+    /// Долг со знаком (§4.11): «+500 ₽» — мне должны, «−177 219 ₽» — я должен, «0 ₽» — без знака.
+    static func debt(_ amount: Decimal, currency: String = "RUB", locale: Locale = .current) -> String {
+        sign(of: amount) + format(amount, currency: currency, locale: locale)
+    }
+
+    /// Долг со знаком в компактном формате — для карусели (как `compact`, но и с «+»).
+    static func compactDebt(_ amount: Decimal, currency: String = "RUB", locale: Locale = .current) -> String {
+        sign(of: amount) + compact(abs(amount), currency: currency, locale: locale)
+    }
+
+    private static func sign(of amount: Decimal) -> String {
+        if amount > 0 { return "+" }
+        if amount < 0 { return "\u{2212}" }
+        return ""
+    }
+
     /// Компактный формат для карусели счетов (§1): до 999 999 — как `format`;
     /// от 1 млн — сокращение локали с 1 знаком («1,2 млн ₽», «₽1.2M», «1,2 Mio. ₽»). Знак минуса — U+2212.
     static func compact(_ amount: Decimal, currency: String = "RUB", locale: Locale = .current) -> String {

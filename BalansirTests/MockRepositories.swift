@@ -141,6 +141,32 @@ final class MockTagRepository: TagRepository {
     }
 }
 
+@MainActor
+final class MockCounterpartyRepository: CounterpartyRepository {
+    /// Все контрагенты, включая удалённых (как в Core Data).
+    var counterparties: [CounterpartyModel] = []
+    var shouldThrow = false
+
+    func fetchAll() async throws -> [CounterpartyModel] {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        return counterparties
+    }
+
+    func save(_ counterparty: CounterpartyModel) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        if let idx = counterparties.firstIndex(where: { $0.id == counterparty.id }) {
+            counterparties[idx] = counterparty
+        } else {
+            counterparties.append(counterparty)
+        }
+    }
+
+    func archive(_ id: UUID) async throws {
+        if shouldThrow { throw NSError(domain: "test", code: 1) }
+        if let idx = counterparties.firstIndex(where: { $0.id == id }) { counterparties[idx].isArchived = true }
+    }
+}
+
 // MARK: - Фабрики тестовых моделей
 
 @MainActor
@@ -179,14 +205,15 @@ extension EntryModel {
         from: AccountModel? = nil,
         to: AccountModel? = nil,
         category: CategoryModel? = nil,
-        tags: [TagModel] = []
+        tags: [TagModel] = [],
+        counterparty: CounterpartyModel? = nil
     ) -> EntryModel {
         let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!
         return EntryModel(
             id: UUID(), date: date, type: type, amount: amount, currency: "RUB",
             note: nil, tags: tags, isRecurring: false, isSoftDeleted: false,
             createdAt: Date(), updatedAt: Date(),
-            fromAccount: from, toAccount: to, category: category
+            fromAccount: from, toAccount: to, category: category, counterparty: counterparty
         )
     }
 }
@@ -195,5 +222,25 @@ extension EntryModel {
 extension TagModel {
     static func makeTest(name: String = "Тег", isArchived: Bool = false) -> TagModel {
         TagModel(id: UUID(), name: name, isArchived: isArchived, createdAt: Date(), updatedAt: Date())
+    }
+}
+
+@MainActor
+extension CounterpartyModel {
+    static func makeTest(name: String = "Контрагент", isArchived: Bool = false, sortOrder: Int32 = 0) -> CounterpartyModel {
+        CounterpartyModel(id: UUID(), name: name, colorHex: "#FF0000", iconName: "person", sortOrder: sortOrder,
+                          isArchived: isArchived, createdAt: Date(), updatedAt: Date())
+    }
+}
+
+@MainActor
+extension EntryModel {
+    /// Операция-долг: «Я отправил» (`sent`) — со счёта, «Мне пришли» — на счёт.
+    static func makeDebt(_ direction: DebtDirection, amount: Decimal, account: AccountModel,
+                         counterparty: CounterpartyModel, daysAgo: Int = 0) -> EntryModel {
+        makeTest(type: .debt, amount: amount, daysAgo: daysAgo,
+                 from: direction == .sent ? account : nil,
+                 to: direction == .received ? account : nil,
+                 counterparty: counterparty)
     }
 }

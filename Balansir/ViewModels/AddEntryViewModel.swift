@@ -23,13 +23,21 @@ final class AddEntryViewModel: Identifiable {
     private let categoryRepo: any CategoryRepository
     private let entryRepo: any EntryRepository
     private let tagRepo: any TagRepository
+    private let counterpartyRepo: any CounterpartyRepository
+    /// Тип и контрагент новой операции, если шит открыт с Главной при фильтре «Долги» (§4.11).
+    private let initialType: EntryType?
+    private let initialCounterpartyId: UUID?
 
     /// Локаль разделителей в поле суммы и сумм в подписях счетов (DI: в тестах — явная).
     private let locale: Locale
 
     init(entry: EntryModel? = nil, accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
-         tagRepo: any TagRepository, locale: Locale = .current) {
+         tagRepo: any TagRepository, counterpartyRepo: any CounterpartyRepository,
+         initialType: EntryType? = nil, initialCounterpartyId: UUID? = nil, locale: Locale = .current) {
         self.locale = locale
+        self.counterpartyRepo = counterpartyRepo
+        self.initialType = initialType
+        self.initialCounterpartyId = initialCounterpartyId
         self.editingEntry = entry
         self.accountRepo = accountRepo
         self.categoryRepo = categoryRepo
@@ -69,6 +77,7 @@ final class AddEntryViewModel: Identifiable {
         switch selectedType {
         case .expense, .income: return selectedAccount != nil && selectedCategory != nil
         case .transfer: return selectedAccount != nil && selectedToAccount != nil && selectedAccount?.id != selectedToAccount?.id
+        case .debt: return selectedAccount != nil && selectedCounterparty != nil
         }
     }
 
@@ -87,7 +96,12 @@ final class AddEntryViewModel: Identifiable {
             async let cats = categoryRepo.fetchAll()
             async let ents = entryRepo.fetchAll()
             async let tgs = tagRepo.fetchAll()
-            let (fetchedAccounts, fetchedCategories, fetchedEntries, fetchedTags) = try await (accs, cats, ents, tgs)
+            async let cps = counterpartyRepo.fetchAll()
+            let (fetchedAccounts, fetchedCategories, fetchedEntries, fetchedTags, fetchedCounterparties)
+                = try await (accs, cats, ents, tgs, cps)
+            allCounterparties = fetchedCounterparties
+            // Подсказка — долг без учёта редактируемой операции.
+            debtBalances = DebtService.balances(entries: fetchedEntries.filter { $0.id != editingEntry?.id })
             accounts = fetchedAccounts
             categories = fetchedCategories
             entries = fetchedEntries
@@ -120,6 +134,14 @@ final class AddEntryViewModel: Identifiable {
                     case .transfer:
                         selectedAccount = entry.fromAccount.flatMap { a in accounts.first { $0.id == a.id } }
                         selectedToAccount = entry.toAccount.flatMap { a in accounts.first { $0.id == a.id } }
+                    case .debt:
+                        debtDirection = entry.debtDirection ?? .sent
+                        selectedAccount = (entry.fromAccount ?? entry.toAccount).flatMap { a in accounts.first { $0.id == a.id } }
+                        // Удалённого контрагента тоже подставляем — иначе «Сохранить» неактивна.
+                        if let cp = entry.counterparty, !allCounterparties.contains(where: { $0.id == cp.id }) {
+                            allCounterparties.append(cp)
+                        }
+                        selectedCounterparty = entry.counterparty.flatMap { c in allCounterparties.first { $0.id == c.id } }
                     }
                     selectedCategory = entry.category.flatMap { c in categories.first { $0.id == c.id } }
                     for tag in entry.tags where !allTags.contains(where: { $0.id == tag.id }) {
@@ -128,6 +150,10 @@ final class AddEntryViewModel: Identifiable {
                     selectedTags = entry.tags.compactMap { t in allTags.first { $0.id == t.id } }
                 } else {
                     selectedAccount = accounts.first
+                    if let initialType { selectedType = initialType }
+                    if let id = initialCounterpartyId {
+                        selectedCounterparty = allCounterparties.first { $0.id == id && !$0.isArchived }
+                    }
                     onTypeChanged()
                 }
             }
@@ -138,7 +164,12 @@ final class AddEntryViewModel: Identifiable {
 
     /// Вызывается при смене сегмента Расход/Доход/Перевод.
     func onTypeChanged() {
-        if selectedType == .transfer {
+        if selectedType == .debt {
+            // У долга нет категории и тегов (§4.11).
+            selectedCategory = nil
+            selectedTags = []
+            cancelAddingTag()
+        } else if selectedType == .transfer {
             selectedCategory = nil
             // У перевода тегов нет.
             selectedTags = []
@@ -169,7 +200,7 @@ final class AddEntryViewModel: Identifiable {
     var renameText = ""
 
     /// Карусель тегов есть у расхода и дохода; у перевода тегов нет.
-    var showsTags: Bool { selectedType != .transfer }
+    var showsTags: Bool { selectedType == .expense || selectedType == .income }
 
     /// Карусель: видимые теги и выбранные (даже скрытые — чтобы их можно было снять),
     /// первыми — чаще использованные с выбранной категорией.
@@ -277,6 +308,76 @@ final class AddEntryViewModel: Identifiable {
         if let i = selectedTags.firstIndex(where: { $0.id == tag.id }) { selectedTags[i] = tag }
     }
 
+    // MARK: - Долг (§4.11)
+
+    /// «Я отправил» / «Мне пришли».
+    var debtDirection = DebtDirection.sent
+    /// Все контрагенты, включая удалённых: по ним новый с тем же именем возвращает удалённого.
+    private(set) var allCounterparties: [CounterpartyModel] = []
+    var selectedCounterparty: CounterpartyModel?
+    /// Долги по контрагентам — для подсказки под каруселью.
+    private var debtBalances: [UUID: Decimal] = [:]
+    /// Ячейка «+» карусели контрагентов превращена в поле ввода.
+    private(set) var isAddingCounterparty = false
+    var newCounterpartyName = ""
+
+    /// Карусель: не удалённые контрагенты и выбранный (даже удалённый — при редактировании).
+    var carouselCounterparties: [CounterpartyModel] {
+        allCounterparties.filter { !$0.isArchived || $0.id == selectedCounterparty?.id }
+    }
+
+    /// Текущий долг выбранного контрагента (без учёта этой операции); nil — контрагент не выбран.
+    var selectedCounterpartyDebt: Decimal? {
+        guard let id = selectedCounterparty?.id else { return nil }
+        return debtBalances[id] ?? 0
+    }
+
+    /// Подсказка под каруселью: «Мне должны +500 ₽» / «Я должен −177 219 ₽» / «Долга нет».
+    var counterpartyHint: String? {
+        guard let debt = selectedCounterpartyDebt else { return nil }
+        let amount = MoneyFormatter.debt(debt, currency: currency, locale: locale)
+        if debt > 0 { return String(localized: "Owed to me \(amount)") }
+        if debt < 0 { return String(localized: "I owe \(amount)") }
+        return String(localized: "No debt")
+    }
+
+    /// Тап по контрагенту: выбрать (повторный тап не снимает — без контрагента долг не сохранить).
+    func selectCounterparty(_ counterparty: CounterpartyModel) {
+        selectedCounterparty = counterparty
+    }
+
+    func startAddingCounterparty() {
+        newCounterpartyName = ""
+        isAddingCounterparty = true
+    }
+
+    func cancelAddingCounterparty() {
+        isAddingCounterparty = false
+        newCounterpartyName = ""
+    }
+
+    /// «Готово» в поле нового контрагента: создаётся и выбирается. Имя уже есть (без учёта регистра) —
+    /// выбирается существующий, удалённый возвращается. Пустое имя просто закрывает поле.
+    func commitNewCounterparty() async {
+        let name = TagUsageService.cleanName(newCounterpartyName)
+        cancelAddingCounterparty()
+        guard !name.isEmpty else { return }
+        if var existing = allCounterparties.first(where: { TagUsageService.sameName($0.name, name, locale: locale) }) {
+            if existing.isArchived {
+                existing.isArchived = false
+                existing.updatedAt = Date()
+                do { try await counterpartyRepo.save(existing) } catch { errorMessage = error.localizedDescription; return }
+                if let i = allCounterparties.firstIndex(where: { $0.id == existing.id }) { allCounterparties[i] = existing }
+            }
+            selectedCounterparty = existing
+            return
+        }
+        let counterparty = CounterpartyModel.new(name: name, existing: allCounterparties)
+        do { try await counterpartyRepo.save(counterparty) } catch { errorMessage = error.localizedDescription; return }
+        allCounterparties.append(counterparty)
+        selectedCounterparty = counterparty
+    }
+
     // MARK: - Ввод суммы (правила §4.7 — в AmountInput)
 
     func press(_ key: NumpadKey) {
@@ -292,19 +393,23 @@ final class AddEntryViewModel: Identifiable {
             await commitNewTag()
             if errorMessage != nil { return }
         }
+        if isAddingCounterparty {
+            await commitNewCounterparty()
+            if errorMessage != nil { return }
+        }
         let now = Date()
         guard !isInFuture(date, now: now) else {
             errorMessage = String(localized: "The transaction date can’t be later than today.")
             return
         }
-        let entry = EntryModel(
+        var entry = EntryModel(
             id: editingEntry?.id ?? UUID(),
             date: date,
             type: selectedType,
             amount: amount,
             currency: currency,
             note: note.isEmpty ? nil : note,
-            tags: selectedType == .transfer ? [] : selectedTags,
+            tags: showsTags ? selectedTags : [],
             isRecurring: editingEntry?.isRecurring ?? false,
             isSoftDeleted: false,
             createdAt: editingEntry?.createdAt ?? now,
@@ -313,9 +418,25 @@ final class AddEntryViewModel: Identifiable {
             toAccount: nil,
             category: nil
         )
-        let from: AccountModel? = selectedType == .income ? nil : selectedAccount
-        let to: AccountModel? = selectedType == .expense ? nil : (selectedType == .income ? selectedAccount : selectedToAccount)
-        let cat: CategoryModel? = selectedType == .transfer ? nil : selectedCategory
+        let from: AccountModel?
+        let to: AccountModel?
+        switch selectedType {
+        case .expense:
+            from = selectedAccount
+            to = nil
+        case .income:
+            from = nil
+            to = selectedAccount
+        case .transfer:
+            from = selectedAccount
+            to = selectedToAccount
+        case .debt:
+            // Отправил — деньги ушли со счёта, пришли — на счёт (§4.11).
+            from = debtDirection == .sent ? selectedAccount : nil
+            to = debtDirection == .received ? selectedAccount : nil
+        }
+        let cat: CategoryModel? = selectedType == .expense || selectedType == .income ? selectedCategory : nil
+        entry.counterparty = selectedType == .debt ? selectedCounterparty : nil
         do { try await entryRepo.save(entry, fromAccount: from, toAccount: to, category: cat) } catch { errorMessage = error.localizedDescription }
     }
 }
@@ -325,7 +446,7 @@ private extension EntryType {
         switch self {
         case .expense: return .expense
         case .income: return .income
-        case .transfer: return .expense
+        case .transfer, .debt: return .expense
         }
     }
 }

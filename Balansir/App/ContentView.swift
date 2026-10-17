@@ -26,11 +26,14 @@ struct ContentView: View {
          categoryRepo: any CategoryRepository,
          entryRepo: any EntryRepository,
          tagRepo: any TagRepository,
+         counterpartyRepo: any CounterpartyRepository,
          isLaunchFinished: Bool = true) {
         self.isLaunchFinished = isLaunchFinished
-        _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: tagRepo))
+        _homeVM = State(wrappedValue: HomeViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
+                                                       tagRepo: tagRepo, counterpartyRepo: counterpartyRepo))
         _statisticsVM = State(wrappedValue: StatisticsViewModel(entryRepo: entryRepo))
-        _accountsVM = State(wrappedValue: AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo))
+        _accountsVM = State(wrappedValue: AccountsViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
+                                                               counterpartyRepo: counterpartyRepo))
     }
 
     var body: some View {

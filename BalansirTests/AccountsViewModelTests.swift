@@ -14,7 +14,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: categoryRepo,
-            entryRepo: MockEntryRepository()
+            entryRepo: MockEntryRepository(),
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         #expect(vm.accounts.count == 2)
@@ -30,7 +31,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
-            entryRepo: entryRepo
+            entryRepo: entryRepo,
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         #expect(vm.balances[account.id] == 700)
@@ -46,7 +48,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: MockAccountRepository(),
             categoryRepo: categoryRepo,
-            entryRepo: MockEntryRepository()
+            entryRepo: MockEntryRepository(),
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         vm.selectedCategoryType = .expense
@@ -62,7 +65,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
-            entryRepo: MockEntryRepository()
+            entryRepo: MockEntryRepository(),
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         await vm.archive(account)
@@ -76,7 +80,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: MockAccountRepository(),
             categoryRepo: categoryRepo,
-            entryRepo: MockEntryRepository()
+            entryRepo: MockEntryRepository(),
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         await vm.archive(category)
@@ -89,7 +94,8 @@ struct AccountsViewModelTests {
         let vm = AccountsViewModel(
             accountRepo: accountRepo,
             categoryRepo: MockCategoryRepository(),
-            entryRepo: MockEntryRepository()
+            entryRepo: MockEntryRepository(),
+            counterpartyRepo: MockCounterpartyRepository()
         )
         await vm.load()
         #expect(vm.errorMessage != nil)
@@ -100,7 +106,7 @@ struct AccountsViewModelTests {
     private func makeVM(_ accountRepo: MockAccountRepository, entries: [EntryModel] = []) -> AccountsViewModel {
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        return AccountsViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo)
+        return AccountsViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, counterpartyRepo: MockCounterpartyRepository())
     }
 
     @Test func totalBalance_суммирует_балансы_с_операциями() async {
@@ -185,7 +191,7 @@ struct AccountsViewModelTests {
     // Без значения по умолчанию `MockAccountRepository()`: тестовый таргет не на MainActor,
     // и default-аргумент вычислялся бы вне главного актора (ошибка компиляции).
     private func makeVM(_ categoryRepo: MockCategoryRepository, accountRepo: MockAccountRepository? = nil) -> AccountsViewModel {
-        AccountsViewModel(accountRepo: accountRepo ?? MockAccountRepository(), categoryRepo: categoryRepo, entryRepo: MockEntryRepository())
+        AccountsViewModel(accountRepo: accountRepo ?? MockAccountRepository(), categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), counterpartyRepo: MockCounterpartyRepository())
     }
 
     @Test func скрытие_категории_показывает_плашку() async {

@@ -16,7 +16,7 @@ struct HomeViewModelTests {
             .makeTest(type: .expense, amount: 200, from: account)
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         // 1000 + 500 - 200 = 1300
@@ -31,7 +31,7 @@ struct HomeViewModelTests {
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [.makeTest(type: .expense, amount: 300, from: a1)]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         // a1: 1000 - 300 = 700, a2: 500 → итого 1200
@@ -46,7 +46,7 @@ struct HomeViewModelTests {
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [.makeTest(type: .transfer, amount: 300, from: a1, to: a2)]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         // a1: 1000-300=700, a2: 500+300=800 → итого 1500 (без изменений)
@@ -57,7 +57,7 @@ struct HomeViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.shouldThrow = true
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.errorMessage != nil)
@@ -74,7 +74,7 @@ struct HomeViewModelTests {
             .makeTest(type: .income,  amount: 500, daysAgo: 0, to: account),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.todayExpense == 300)
@@ -91,7 +91,7 @@ struct HomeViewModelTests {
             .makeTest(type: .income,  amount: 999, daysAgo: 0, to: account),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.monthExpense == 350)
@@ -108,7 +108,7 @@ struct HomeViewModelTests {
             .makeTest(type: .expense, amount: 200, daysAgo: 0, from: account),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.monthIncome == 1500)
@@ -125,7 +125,7 @@ struct HomeViewModelTests {
             .makeTest(type: .income,  amount: 200, to: a2),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.filteredEntries.count == 2)
@@ -142,7 +142,7 @@ struct HomeViewModelTests {
             .makeTest(type: .expense, amount: 200, from: a2),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedAccountId = a1.id
 
@@ -158,7 +158,7 @@ struct HomeViewModelTests {
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [.makeTest(type: .transfer, amount: 500, from: a1, to: a2)]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedAccountId = a1.id
 
@@ -173,7 +173,7 @@ struct HomeViewModelTests {
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [.makeTest(type: .transfer, amount: 500, from: a1, to: a2)]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedAccountId = a2.id
 
@@ -191,7 +191,7 @@ struct HomeViewModelTests {
             .makeTest(type: .expense, amount: 300, daysAgo: 1, from: account),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.entriesByDay.count == 2)
@@ -210,7 +210,7 @@ struct HomeViewModelTests {
             .makeTest(type: .income,  amount: 999, daysAgo: 0, to: account),
         ]
 
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.entriesByDay[0].dayExpense == 400)
@@ -223,7 +223,7 @@ struct HomeViewModelTests {
         accountRepo.accounts = accounts
         let entryRepo = MockEntryRepository()
         entryRepo.entries = entries
-        return HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        return HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
     }
 
     @Test func поиск_по_названию_категории() async {
@@ -327,7 +327,7 @@ struct HomeViewModelTests {
         let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account)
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [entry]
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         #expect(vm.totalBalance == 700)
 
@@ -347,7 +347,7 @@ struct HomeViewModelTests {
         let entry = EntryModel.makeTest(type: .expense, amount: 300, from: account)
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [entry]
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         await vm.delete(entry: entry)
 
@@ -362,7 +362,7 @@ struct HomeViewModelTests {
         let entry = EntryModel.makeTest(type: .expense, amount: 300)
         let entryRepo = MockEntryRepository()
         entryRepo.entries = [entry]
-        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         entryRepo.shouldThrow = true
 
@@ -445,7 +445,7 @@ struct HomeViewModelTests {
     // MARK: переход со вкладки «Счета» (§4.5)
 
     @Test func showAccount_ставит_фильтр_и_не_снимает_его_повторно() {
-        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         let id = UUID()
         vm.showAccount(id)
         #expect(vm.selectedAccountId == id)
@@ -455,7 +455,7 @@ struct HomeViewModelTests {
     }
 
     @Test func showAccount_закрывает_поиск() {
-        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         vm.isSearchActive = true
         vm.searchQuery = "кофе"
         vm.shouldFocusSearch = true
@@ -466,7 +466,7 @@ struct HomeViewModelTests {
     }
 
     @Test func didRevealAccount_сбрасывает_запрос_но_не_фильтр() {
-        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: MockAccountRepository(), categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         let id = UUID()
         vm.showAccount(id)
         vm.didRevealAccount()
@@ -478,7 +478,7 @@ struct HomeViewModelTests {
         let account = AccountModel.makeTest()
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [account]
-        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = HomeViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.showAccount(account.id)
         try? await accountRepo.archive(account.id)

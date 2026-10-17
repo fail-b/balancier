@@ -75,12 +75,14 @@ final class HomeViewModel {
     private let entryRepo: any EntryRepository
     /// Только для шита операции (`makeAddEntryViewModel`); теги ленты приходят в `EntryModel.tags`.
     private let tagRepo: any TagRepository
+    private let counterpartyRepo: any CounterpartyRepository
     /// Локаль названий месяцев и чисел в поиске (DI: в тестах — явная).
     private let locale: Locale
 
     init(accountRepo: any AccountRepository, categoryRepo: any CategoryRepository, entryRepo: any EntryRepository,
-         tagRepo: any TagRepository, locale: Locale = .current) {
+         tagRepo: any TagRepository, counterpartyRepo: any CounterpartyRepository, locale: Locale = .current) {
         self.accountRepo = accountRepo
+        self.counterpartyRepo = counterpartyRepo
         self.categoryRepo = categoryRepo
         self.entryRepo = entryRepo
         self.tagRepo = tagRepo
@@ -107,6 +109,8 @@ final class HomeViewModel {
     /// открытый поиск закрывается — иначе фильтр не виден.
     func showAccount(_ id: UUID) {
         selectedAccountId = id
+        isDebtFilterActive = false
+        selectedCounterpartyId = nil
         searchQuery = ""
         isSearchActive = false
         shouldFocusSearch = false
@@ -115,6 +119,72 @@ final class HomeViewModel {
 
     func didRevealAccount() {
         accountToReveal = nil
+    }
+
+    // MARK: - Карусель: счета и «Долги» (§4.1.3, §4.11)
+
+    /// Фильтр «Долги»: в ленте только операции-долги. Взаимоисключающий с фильтром счёта.
+    private(set) var isDebtFilterActive = false
+    /// Контрагент во второй карусели (только при фильтре «Долги»); nil — все долги.
+    private(set) var selectedCounterpartyId: UUID?
+    /// Контрагенты для каруселей (без удалённых), по порядку.
+    private(set) var counterparties: [CounterpartyModel] = []
+    /// Долги по контрагентам: `+` — мне должны.
+    private(set) var debtBalances: [UUID: Decimal] = [:]
+
+    /// Чип «Долги» есть, если есть хотя бы один контрагент.
+    var showsDebtsChip: Bool { !counterparties.isEmpty }
+
+    /// «Все» в карусели активна: нет ни фильтра счёта, ни «Долгов».
+    var isAllSelected: Bool { selectedAccountId == nil && !isDebtFilterActive }
+
+    /// Итоги по всем контрагентам — для чипа «Долги».
+    var debtTotals: DebtService.Totals {
+        DebtService.totals(of: counterparties, balances: debtBalances)
+    }
+
+    /// Итоги hero в режиме долгов: по выбранному контрагенту или по всем.
+    var heroDebtTotals: DebtService.Totals {
+        guard let id = selectedCounterpartyId else { return debtTotals }
+        return DebtService.totals(of: counterparties.filter { $0.id == id }, balances: debtBalances)
+    }
+
+    func debt(for counterparty: CounterpartyModel) -> Decimal {
+        debtBalances[counterparty.id] ?? 0
+    }
+
+    /// Тап по «Все».
+    func selectAll() {
+        selectedAccountId = nil
+        isDebtFilterActive = false
+        selectedCounterpartyId = nil
+    }
+
+    /// Тап по счёту: фильтр по нему, повторный — «Все». Фильтр «Долги» снимается.
+    func toggleAccount(_ id: UUID) {
+        let isActive = selectedAccountId == id
+        selectAll()
+        if !isActive { selectedAccountId = id }
+    }
+
+    /// Тап по «Долги»: лента только по долгам, повторный — «Все». Фильтр счёта снимается.
+    func toggleDebts() {
+        let wasActive = isDebtFilterActive
+        selectAll()
+        isDebtFilterActive = !wasActive
+    }
+
+    /// Тап по контрагенту во второй карусели: лента по нему, повторный — все долги.
+    func toggleCounterparty(_ id: UUID) {
+        selectedCounterpartyId = selectedCounterpartyId == id ? nil : id
+    }
+
+    // Подходит ли операция под фильтр «Долги» (и контрагента).
+    private func debtMatches(_ entry: EntryModel) -> Bool {
+        guard isDebtFilterActive else { return true }
+        guard entry.type == .debt else { return false }
+        guard let id = selectedCounterpartyId else { return true }
+        return entry.counterparty?.id == id
     }
 
     // MARK: - Поиск по тегу (§4.3)
@@ -177,6 +247,10 @@ final class HomeViewModel {
     /// Текст пустой ленты (вне поиска) с учётом фильтров счёта и месяца.
     var emptyFeedMessage: String {
         let byMonth = selectedMonth != nil && !isSearchActive
+        if isDebtFilterActive {
+            if selectedCounterpartyId != nil { return String(localized: "No transactions with this counterparty.") }
+            return String(localized: "No debt transactions.")
+        }
         switch (selectedAccountId != nil, byMonth) {
         case (true, true): return String(localized: "No transactions for this account this month.")
         case (false, true): return String(localized: "No transactions this month.")
@@ -199,7 +273,7 @@ final class HomeViewModel {
 
     /// Лента с учётом фильтра по счёту (карусель), месяца (шапка) И поискового запроса.
     var filteredEntries: [EntryModel] {
-        let byAccount = allEntries.filter { accountMatches($0) && monthMatches($0) }
+        let byAccount = allEntries.filter { accountMatches($0) && debtMatches($0) && monthMatches($0) }
         var query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         // «#тег» — поиск только по тегам (так теги показаны в ленте, §4.3); без «#» — по всем полям.
         let tagsOnly = query.hasPrefix("#")
@@ -231,7 +305,7 @@ final class HomeViewModel {
         switch entry.type {
         case .expense: return entry.fromAccount?.id == accountId
         case .income: return entry.toAccount?.id == accountId
-        case .transfer:
+        case .transfer, .debt:
             return entry.fromAccount?.id == accountId || entry.toAccount?.id == accountId
         }
     }
@@ -251,10 +325,11 @@ final class HomeViewModel {
         entry.tags.contains { normalize($0.name).contains(needle) }
     }
 
-    // Поиск по категории, счёту (у перевода — по обоим), тегам и заметке.
+    // Поиск по категории, контрагенту, счёту (у перевода — по обоим), тегам и заметке.
     private func textMatches(_ entry: EntryModel, needle: String) -> Bool {
         var fields: [String] = entry.tags.map(\.name)
         if let category = entry.category?.name { fields.append(category) }
+        if let counterparty = entry.counterparty?.name { fields.append(counterparty) }
         if let from = entry.fromAccount?.name { fields.append(from) }
         if let to = entry.toAccount?.name { fields.append(to) }
         if let note = entry.note { fields.append(note) }
@@ -299,8 +374,16 @@ final class HomeViewModel {
             async let a = accountRepo.fetchAll()
             async let c = categoryRepo.fetchAll()
             async let e = entryRepo.fetchAll()
-            let (accs, cats, entries) = try await (a, c, e)
+            async let p = counterpartyRepo.fetchAll()
+            let (accs, cats, entries, cps) = try await (a, c, e, p)
             accounts = accs
+            counterparties = cps.filter { !$0.isArchived }
+            debtBalances = DebtService.balances(entries: entries)
+            // Контрагента удалили — снимаем его фильтр; контрагентов не осталось — и «Долги».
+            if let id = selectedCounterpartyId, !counterparties.contains(where: { $0.id == id }) {
+                selectedCounterpartyId = nil
+            }
+            if counterparties.isEmpty { isDebtFilterActive = false }
             categories = cats
             allEntries = entries
             balances = BalanceService.computeBalances(accounts: accs, entries: entries)
@@ -353,9 +436,14 @@ final class HomeViewModel {
         recentlyDeleted = nil
     }
 
+    /// Шит операции. Новая операция при фильтре «Долги» открывается сразу на «Долге» (и с контрагентом).
     func makeAddEntryViewModel(for entry: EntryModel? = nil) -> AddEntryViewModel {
-        AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
-                          tagRepo: tagRepo, locale: locale)
+        let debtMode = entry == nil && isDebtFilterActive
+        return AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo,
+                                 tagRepo: tagRepo, counterpartyRepo: counterpartyRepo,
+                                 initialType: debtMode ? .debt : nil,
+                                 initialCounterpartyId: debtMode ? selectedCounterpartyId : nil,
+                                 locale: locale)
     }
 
     func makeAccountFormViewModel(for account: AccountModel? = nil) -> AccountFormViewModel {

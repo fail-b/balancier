@@ -9,7 +9,7 @@ struct AddEntryViewModelTests {
     private func makeVM() -> AddEntryViewModel {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [AccountModel.makeTest()]
-        return AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        return AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
     }
 
     // MARK: canSave
@@ -20,7 +20,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1, a2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "500"
@@ -35,7 +35,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "500"
@@ -50,7 +50,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [account]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "100"
@@ -68,7 +68,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [category]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "0"
@@ -89,7 +89,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [category]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .expense
         vm.amountString = "150"
@@ -111,7 +111,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [category]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .income
         vm.amountString = "300"
@@ -131,7 +131,7 @@ struct AddEntryViewModelTests {
         accountRepo.accounts = [a1, a2]
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.amountString = "200"
@@ -162,7 +162,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [category]
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.isEditing == true)
@@ -195,7 +195,7 @@ struct AddEntryViewModelTests {
         let categoryRepo = MockCategoryRepository()
         categoryRepo.categories = [c1, c2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.selectedCategory?.id == c1.id)
@@ -207,7 +207,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.accounts = [a1, a2]
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         vm.selectedType = .transfer
         vm.onTypeChanged()
@@ -222,7 +222,7 @@ struct AddEntryViewModelTests {
         let accountRepo = MockAccountRepository()
         accountRepo.shouldThrow = true
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.errorMessage != nil)
@@ -242,7 +242,7 @@ struct AddEntryViewModelTests {
         try? await categoryRepo.archive(hidden.id)
         let entryRepo = MockEntryRepository()
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: entryRepo, tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
 
         #expect(vm.selectedCategory?.id == hidden.id)
@@ -262,7 +262,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [hidden]
         try? await categoryRepo.archive(hidden.id)
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         await vm.load()
         #expect(vm.categories.count == 1)
@@ -278,7 +278,7 @@ struct AddEntryViewModelTests {
         categoryRepo.categories = [hidden, visible]
         try? await categoryRepo.archive(hidden.id)
 
-        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(accountRepo: accountRepo, categoryRepo: categoryRepo, entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         #expect(vm.filteredCategories.map(\.id) == [visible.id])
         #expect(vm.selectedCategory?.id == visible.id)
@@ -292,7 +292,7 @@ struct AddEntryViewModelTests {
         accountRepo.accounts = [from, to]
         try? await accountRepo.archive(to.id)
 
-        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), locale: TestLocale.ru)
+        let vm = AddEntryViewModel(entry: entry, accountRepo: accountRepo, categoryRepo: MockCategoryRepository(), entryRepo: MockEntryRepository(), tagRepo: MockTagRepository(), counterpartyRepo: MockCounterpartyRepository(), locale: TestLocale.ru)
         await vm.load()
         #expect(vm.selectedAccount?.id == from.id)
         #expect(vm.selectedToAccount?.id == to.id)
