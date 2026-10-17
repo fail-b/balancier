@@ -24,6 +24,12 @@ struct PersistenceController {
             }
         }
         container.viewContext.automaticallyMergesChangesFromParent = true
+        // v3 → v4: суммы из Double в минимальные единицы (повторный запуск ничего не меняет).
+        do {
+            try MinorUnitsMigration.run(in: container.viewContext)
+        } catch {
+            fatalError("Minor units migration failed: \(error)")
+        }
 
         if !inMemory {
             seedDefaultsIfNeeded(in: container.viewContext)

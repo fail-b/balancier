@@ -17,6 +17,8 @@ struct EntryModel: Identifiable {
     var fromAccount: AccountModel?
     var toAccount: AccountModel?
     var category: CategoryModel?
+    /// Контрагент операции-долга (§4.11); у остальных типов nil.
+    var counterparty: CounterpartyModel? = nil
 }
 
 extension EntryModel {
@@ -25,7 +27,14 @@ extension EntryModel {
         case .expense: return category?.name ?? String(localized: "Expense")
         case .income: return category?.name ?? String(localized: "entry.type.income", defaultValue: "Income")
         case .transfer: return String(localized: "Transfer")
+        case .debt: return counterparty?.name ?? String(localized: "Debt")
         }
+    }
+
+    /// Направление долга: есть счёт-источник — «Я отправил», иначе — «Мне пришли». nil — не долг.
+    var debtDirection: DebtDirection? {
+        guard type == .debt else { return nil }
+        return fromAccount != nil ? .sent : .received
     }
 
     /// Заметка для строки ленты: в кавычках “…”, в одну строку; nil, если заметки нет (§4.2).
@@ -48,6 +57,10 @@ extension EntryModel {
             let from = fromAccount?.name ?? ""
             let to = toAccount?.name ?? ""
             return "\(from) → \(to)"
+        case .debt:
+            // «Я отправил · Тинькофф» / «Мне пришли · Тинькофф».
+            let account = (fromAccount ?? toAccount)?.name ?? ""
+            return "\(debtDirection?.title ?? "") · \(account)"
         }
     }
 }

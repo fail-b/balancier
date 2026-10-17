@@ -5,7 +5,7 @@ extension Account {
         AccountModel(
             id: id,
             name: name,
-            initialBalance: Decimal(initialBalance),
+            initialBalance: MinorUnits.fromMinor(initialBalanceMinor, currency: currency),
             currency: currency,
             colorHex: colorHex,
             iconName: iconName,
@@ -19,7 +19,7 @@ extension Account {
 
     func update(from model: AccountModel) {
         name = model.name
-        initialBalance = NSDecimalNumber(decimal: model.initialBalance).doubleValue
+        initialBalanceMinor = MinorUnits.toMinor(model.initialBalance, currency: model.currency)
         currency = model.currency
         colorHex = model.colorHex
         iconName = model.iconName

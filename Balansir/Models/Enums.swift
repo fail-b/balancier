@@ -4,6 +4,8 @@ enum EntryType: String, CaseIterable {
     case expense = "expense"
     case income = "income"
     case transfer = "transfer"
+    /// Долг (§4.11): счёт ↔ контрагент. Меняет баланс счёта, но не расход и не доход.
+    case debt = "debt"
 
     var title: String {
         switch self {
@@ -11,6 +13,21 @@ enum EntryType: String, CaseIterable {
         // Ключ отдельный: «Income» без уточнения — это «Доходы» (множественное), а тут «Доход».
         case .income: return String(localized: "entry.type.income", defaultValue: "Income")
         case .transfer: return String(localized: "Transfer")
+        case .debt: return String(localized: "Debt")
+        }
+    }
+}
+
+/// Направление операции-долга (§4.11). В модели не хранится: «Я отправил» — у операции `fromAccount`,
+/// «Мне пришли» — `toAccount`. Дал в долг или вернул — видно по итогу, отдельного флага нет.
+enum DebtDirection: CaseIterable {
+    case sent
+    case received
+
+    var title: String {
+        switch self {
+        case .sent: return String(localized: "I sent")
+        case .received: return String(localized: "I received")
         }
     }
 }

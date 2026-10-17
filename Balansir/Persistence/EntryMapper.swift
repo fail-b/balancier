@@ -7,7 +7,7 @@ extension Entry {
             id: id,
             date: date,
             type: EntryType(rawValue: entryType) ?? .expense,
-            amount: Decimal(amount),
+            amount: MinorUnits.fromMinor(amountMinor, currency: currency),
             currency: currency,
             note: note,
             tags: ((tagSet as? Set<TagEntity>) ?? [])
@@ -19,14 +19,15 @@ extension Entry {
             updatedAt: updatedAt ?? createdAt,
             fromAccount: fromAccount?.toModel(),
             toAccount: toAccount?.toModel(),
-            category: category?.toModel()
+            category: category?.toModel(),
+            counterparty: counterparty?.toModel()
         )
     }
 
     func update(from model: EntryModel, context: NSManagedObjectContext) {
         date = model.date
         entryType = model.type.rawValue
-        amount = NSDecimalNumber(decimal: model.amount).doubleValue
+        amountMinor = MinorUnits.toMinor(model.amount, currency: model.currency)
         currency = model.currency
         note = model.note
         isRecurring = model.isRecurring

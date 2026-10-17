@@ -49,6 +49,13 @@ final class CoreDataEntryRepository: EntryRepository {
             } else {
                 entity.category = nil
             }
+            if let counterpartyId = entry.counterparty?.id {
+                let req = Counterparty.fetchRequest()
+                req.predicate = NSPredicate(format: "id == %@", counterpartyId as CVarArg)
+                entity.counterparty = try self.context.fetch(req).first
+            } else {
+                entity.counterparty = nil
+            }
             let tagIds = entry.tags.map(\.id)
             if tagIds.isEmpty {
                 entity.tagSet = nil
