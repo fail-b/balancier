@@ -78,6 +78,8 @@ struct EntryRow: View {
                         .font(Theme.Font.rowIcon)
                         .foregroundStyle(Theme.Colors.transfer)
                 }
+        } else if entry.type == .debt, let counterparty = entry.counterparty {
+            CounterpartyIcon(counterparty: counterparty, size: Theme.Row.iconSize)
         } else if let category = entry.category {
             CategoryIcon(category: category, size: Theme.Row.iconSize)
         } else {
@@ -92,6 +94,8 @@ struct EntryRow: View {
         case .expense: return "\u{2212}\(formatted)"
         case .income: return "+\(formatted)"
         case .transfer: return formatted
+        // Долг: отправил — «−», пришли — «+» (§4.11).
+        case .debt: return entry.debtDirection == .sent ? "\u{2212}\(formatted)" : "+\(formatted)"
         }
     }
 
@@ -100,6 +104,8 @@ struct EntryRow: View {
         case .expense: return Theme.Colors.ink
         case .income: return Theme.Colors.income
         case .transfer: return Theme.Colors.ink
+        // Пришедший долг — не доход, поэтому не `income`.
+        case .debt: return Theme.Colors.ink
         }
     }
 }

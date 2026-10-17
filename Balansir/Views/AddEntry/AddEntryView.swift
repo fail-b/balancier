@@ -6,8 +6,8 @@ struct AddEntryView: View {
 
     @State private var path: [AccountPickerTarget] = []
     @State private var showDatePicker = false
-    /// Поле с системной клавиатурой: «Заметка» или новый тег в карусели.
-    private enum Field { case note, newTag }
+    /// Поле с системной клавиатурой: «Заметка», новый тег или новый контрагент в карусели.
+    private enum Field { case note, newTag, newCounterparty }
     /// Пока фокус в поле — вместо своей цифровой клавиатуры системная,
     /// а «Сохранить» остаётся над ней (правило «минимум тапов»).
     @FocusState private var focusedField: Field?
@@ -157,15 +157,30 @@ struct AddEntryView: View {
     // MARK: - Сегмент типа
 
     private var typeSegment: some View {
+        segment(EntryType.allCases, title: \.title, isOptionActive: { viewModel.selectedType == $0 }) { type in
+            viewModel.selectedType = type
+            viewModel.onTypeChanged()
+        }
+    }
+
+    /// Сегмент «Я отправил / Мне пришли» у долга (§4.11).
+    private var debtDirectionSegment: some View {
+        segment(DebtDirection.allCases, title: \.title, isOptionActive: { viewModel.debtDirection == $0 }) {
+            viewModel.debtDirection = $0
+        }
+    }
+
+    /// Сегмент как у типа операции: `fill`, активный — `card` с тенью.
+    private func segment<T: Hashable>(_ options: [T], title: KeyPath<T, String>, isOptionActive: @escaping (T) -> Bool,
+                                      onSelect: @escaping (T) -> Void) -> some View {
         HStack(spacing: 0) {
-            ForEach(EntryType.allCases, id: \.self) { type in
-                let isActive = viewModel.selectedType == type
+            ForEach(options, id: \.self) { option in
+                let isActive = isOptionActive(option)
                 Button {
                     focusedField = nil
-                    viewModel.selectedType = type
-                    viewModel.onTypeChanged()
+                    onSelect(option)
                 } label: {
-                    Text(type.title)
+                    Text(option[keyPath: title])
                         .font(.system(size: 15, weight: isActive ? .semibold : .regular))
                         .foregroundStyle(isActive ? Theme.Colors.ink : Theme.Colors.ink2)
                         .frame(maxWidth: .infinity)
@@ -220,7 +235,11 @@ struct AddEntryView: View {
 
     private var card: some View {
         VStack(spacing: 0) {
-            if viewModel.selectedType != .transfer {
+            if viewModel.selectedType == .debt {
+                debtSection
+                Divider().padding(.leading, Theme.Spacing.l)
+                accountRow(target: .from, label: "Account")
+            } else if viewModel.selectedType != .transfer {
                 categoryStrip
                     .padding(.vertical, Theme.Spacing.m)
                 if viewModel.showsTags {
@@ -363,6 +382,96 @@ struct AddEntryView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text("New tag"))
+        }
+    }
+
+    // MARK: - Долг (§4.11)
+
+    /// Направление, карусель контрагентов и подсказка о текущем долге.
+    private var debtSection: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.m) {
+            debtDirectionSegment
+                .padding(.horizontal, Theme.Spacing.l)
+            counterpartyStrip
+            if let hint = viewModel.counterpartyHint {
+                Text(hint)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.debtColor(for: viewModel.selectedCounterpartyDebt ?? 0))
+                    .padding(.horizontal, Theme.Spacing.l)
+            }
+        }
+        .padding(.vertical, Theme.Spacing.m)
+    }
+
+    /// Карусель контрагентов: капсулы как у тегов, в конце «+» — поле нового контрагента.
+    private var counterpartyStrip: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Theme.Spacing.s) {
+                    ForEach(viewModel.carouselCounterparties) { counterparty in
+                        counterpartyCell(counterparty)
+                    }
+                    addCounterpartyCell
+                        .id(Field.newCounterparty)
+                }
+                .padding(.horizontal, Theme.Spacing.l)
+            }
+            .onChange(of: viewModel.isAddingCounterparty) { _, isAdding in
+                if isAdding { withAnimation { proxy.scrollTo(Field.newCounterparty, anchor: .trailing) } }
+            }
+        }
+        // Ушёл фокус из поля (тап мимо, «Сохранить») — введённое сохраняется.
+        .onChange(of: focusedField) { old, new in
+            if old == .newCounterparty, new != .newCounterparty, viewModel.isAddingCounterparty {
+                Task { await viewModel.commitNewCounterparty() }
+            }
+        }
+    }
+
+    private func counterpartyCell(_ counterparty: CounterpartyModel) -> some View {
+        let isSelected = viewModel.selectedCounterparty?.id == counterparty.id
+        return Button {
+            focusedField = nil
+            viewModel.selectCounterparty(counterparty)
+        } label: {
+            Text(counterparty.name)
+                .font(Theme.Font.tagCarousel)
+                .foregroundStyle(isSelected ? Theme.Colors.onColor : Theme.Colors.ink)
+                .lineLimit(1)
+                .padding(.horizontal, Theme.TagSize.carouselHorizontalPadding)
+                .frame(height: Theme.TagSize.carouselHeight)
+                .background(isSelected ? Theme.Colors.accent : Theme.Colors.fill, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var addCounterpartyCell: some View {
+        if viewModel.isAddingCounterparty {
+            TextField("New counterparty", text: $viewModel.newCounterpartyName)
+                .font(Theme.Font.tagCarousel)
+                .foregroundStyle(Theme.Colors.ink)
+                .focused($focusedField, equals: .newCounterparty)
+                .submitLabel(.done)
+                .onSubmit { Task { await viewModel.commitNewCounterparty() } }
+                .padding(.horizontal, Theme.TagSize.carouselHorizontalPadding)
+                .frame(width: Theme.TagSize.newTagFieldWidth, height: Theme.TagSize.carouselHeight)
+                .background(Theme.Colors.fill, in: Capsule())
+                .overlay(Capsule().strokeBorder(Theme.Colors.accent, lineWidth: Theme.TagSize.newTagFieldBorder))
+                .onAppear { focusedField = .newCounterparty }
+        } else {
+            Button {
+                viewModel.startAddingCounterparty()
+                focusedField = .newCounterparty
+            } label: {
+                AppIcon.image(named: AppIcon.add)
+                    .font(Theme.Font.tagCarousel)
+                    .foregroundStyle(Theme.Colors.ink2)
+                    .frame(width: Theme.TagSize.carouselHeight, height: Theme.TagSize.carouselHeight)
+                    .background(Theme.Colors.fill, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text("New counterparty"))
         }
     }
 

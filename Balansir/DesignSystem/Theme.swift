@@ -19,6 +19,9 @@ enum Theme {
         static let expense = Color("Colors/expense")
         static let income = Color("Colors/income")
         static let transfer = Color("Colors/transfer")
+        // Долги (§4.11): «мне должны» (+) и «я должен» (−)
+        static let debtOwedToMe = Color("Colors/debtOwedToMe")
+        static let debtIOwe = Color("Colors/debtIOwe")
         // Служебные
         static let negativeBalance = Color("Colors/negativeBalance")
         static let fallback = Color("Colors/fallback")
@@ -30,6 +33,13 @@ enum Theme {
         static let splashBackground = Color("Colors/splashBackground")
         static let splashMark = Color("Colors/splashMark")
         static let splashText = Color("Colors/splashText")
+    }
+
+    /// Цвет суммы долга по знаку (§4.11): `+` — `debtOwedToMe`, `−` — `debtIOwe`, 0 — `ink2`.
+    static func debtColor(for amount: Decimal) -> Color {
+        if amount > 0 { return Colors.debtOwedToMe }
+        if amount < 0 { return Colors.debtIOwe }
+        return Colors.ink2
     }
 
     /// Мягкая тень плавающих стеклянных элементов (таб-бар).
@@ -68,6 +78,18 @@ enum Theme {
         static let textSpacing: CGFloat = 2
         /// Отступ разделителя слева: паддинг 16 + иконка 40 + зазор 12.
         static let separatorInset: CGFloat = 68
+    }
+
+    /// Hero-карточка Главной (§4.1): вертикальный паддинг (горизонтальный — `Spacing.xl`).
+    enum Hero {
+        static let verticalPadding: CGFloat = 18
+    }
+
+    /// Экран «Контрагенты» и форма контрагента (§4.11).
+    enum Counterparties {
+        /// Ячейка выбора цвета/иконки в форме.
+        static let pickerCellHeight: CGFloat = 36
+        static let pickerIconSize: CGFloat = 36
     }
 
     /// Шит новой операции (§4.7).
