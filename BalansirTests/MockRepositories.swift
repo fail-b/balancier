@@ -235,7 +235,7 @@ extension CounterpartyModel {
 
 @MainActor
 extension EntryModel {
-    /// Операция-долг: «Я отправил» (`sent`) — со счёта, «Мне пришли» — на счёт.
+    /// Операция-долг: «Вы отправили» (`sent`) — со счёта, «Вам пришли» — на счёт.
     static func makeDebt(_ direction: DebtDirection, amount: Decimal, account: AccountModel,
                          counterparty: CounterpartyModel, daysAgo: Int = 0) -> EntryModel {
         makeTest(type: .debt, amount: amount, daysAgo: daysAgo,

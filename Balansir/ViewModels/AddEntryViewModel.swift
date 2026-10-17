@@ -310,7 +310,7 @@ final class AddEntryViewModel: Identifiable {
 
     // MARK: - Долг (§4.11)
 
-    /// «Я отправил» / «Мне пришли».
+    /// «Вы отправили» / «Вам пришли».
     var debtDirection = DebtDirection.sent
     /// Все контрагенты, включая удалённых: по ним новый с тем же именем возвращает удалённого.
     private(set) var allCounterparties: [CounterpartyModel] = []
@@ -332,12 +332,12 @@ final class AddEntryViewModel: Identifiable {
         return debtBalances[id] ?? 0
     }
 
-    /// Подсказка под каруселью: «Мне должны +500 ₽» / «Я должен −177 219 ₽» / «Долга нет».
+    /// Подсказка под каруселью: «Вам должны +500 ₽» / «Вы должны −177 219 ₽» / «Долга нет».
     var counterpartyHint: String? {
         guard let debt = selectedCounterpartyDebt else { return nil }
         let amount = MoneyFormatter.debt(debt, currency: currency, locale: locale)
-        if debt > 0 { return String(localized: "Owed to me \(amount)") }
-        if debt < 0 { return String(localized: "I owe \(amount)") }
+        if debt > 0 { return String(localized: "Owed to you \(amount)") }
+        if debt < 0 { return String(localized: "You owe \(amount)") }
         return String(localized: "No debt")
     }
 

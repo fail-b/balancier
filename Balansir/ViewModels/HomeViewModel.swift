@@ -129,7 +129,7 @@ final class HomeViewModel {
     private(set) var selectedCounterpartyId: UUID?
     /// Контрагенты для каруселей (без удалённых), по порядку.
     private(set) var counterparties: [CounterpartyModel] = []
-    /// Долги по контрагентам: `+` — мне должны.
+    /// Долги по контрагентам: `+` — вам должны.
     private(set) var debtBalances: [UUID: Decimal] = [:]
 
     /// Чип «Долги» есть, если есть хотя бы один контрагент.

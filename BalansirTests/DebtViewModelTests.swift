@@ -112,7 +112,7 @@ struct AddEntryDebtTests {
         env.vm.selectCounterparty(inga)
         #expect(env.vm.selectedCounterpartyDebt == 500)
         let amount = MoneyFormatter.debt(500, locale: TestLocale.ru)
-        #expect(env.vm.counterpartyHint == String(localized: "Owed to me \(amount)"))
+        #expect(env.vm.counterpartyHint == String(localized: "Owed to you \(amount)"))
         env.vm.selectCounterparty(mom)
         #expect(env.vm.selectedCounterpartyDebt == -1000)
     }

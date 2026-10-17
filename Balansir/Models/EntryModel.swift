@@ -31,7 +31,7 @@ extension EntryModel {
         }
     }
 
-    /// Направление долга: есть счёт-источник — «Я отправил», иначе — «Мне пришли». nil — не долг.
+    /// Направление долга: есть счёт-источник — «Вы отправили», иначе — «Вам пришли». nil — не долг.
     var debtDirection: DebtDirection? {
         guard type == .debt else { return nil }
         return fromAccount != nil ? .sent : .received
@@ -58,7 +58,7 @@ extension EntryModel {
             let to = toAccount?.name ?? ""
             return "\(from) → \(to)"
         case .debt:
-            // «Я отправил · Тинькофф» / «Мне пришли · Тинькофф».
+            // «Вы отправили · Тинькофф» / «Вам пришли · Тинькофф».
             let account = (fromAccount ?? toAccount)?.name ?? ""
             return "\(debtDirection?.title ?? "") · \(account)"
         }

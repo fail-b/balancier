@@ -19,7 +19,7 @@ enum Theme {
         static let expense = Color("Colors/expense")
         static let income = Color("Colors/income")
         static let transfer = Color("Colors/transfer")
-        // Долги (§4.11): «мне должны» (+) и «я должен» (−)
+        // Долги (§4.11): «вам должны» (+) и «вы должны» (−)
         static let debtOwedToMe = Color("Colors/debtOwedToMe")
         static let debtIOwe = Color("Colors/debtIOwe")
         // Служебные

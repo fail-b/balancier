@@ -132,15 +132,15 @@ struct CounterpartiesView: View {
     }
 }
 
-/// Сводка «Мне должны · Я должен» (§4.11).
+/// Сводка «Вам должны · Вы должны» (§4.11).
 struct DebtTotalsCard: View {
     let totals: DebtService.Totals
 
     var body: some View {
         HStack(alignment: .lastTextBaseline) {
-            column(title: "Owed to me", amount: totals.owedToMe, color: Theme.Colors.debtOwedToMe, alignment: .leading)
+            column(title: "Owed to you", amount: totals.owedToMe, color: Theme.Colors.debtOwedToMe, alignment: .leading)
             Spacer(minLength: Theme.Spacing.s)
-            column(title: "I owe", amount: totals.iOwe, color: Theme.Colors.debtIOwe, alignment: .trailing)
+            column(title: "You owe", amount: totals.iOwe, color: Theme.Colors.debtIOwe, alignment: .trailing)
         }
         .padding(Theme.Spacing.l)
         .frame(maxWidth: .infinity)

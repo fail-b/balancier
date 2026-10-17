@@ -18,16 +18,16 @@ enum EntryType: String, CaseIterable {
     }
 }
 
-/// Направление операции-долга (§4.11). В модели не хранится: «Я отправил» — у операции `fromAccount`,
-/// «Мне пришли» — `toAccount`. Дал в долг или вернул — видно по итогу, отдельного флага нет.
+/// Направление операции-долга (§4.11). В модели не хранится: «Вы отправили» — у операции `fromAccount`,
+/// «Вам пришли» — `toAccount`. Дал в долг или вернул — видно по итогу, отдельного флага нет.
 enum DebtDirection: CaseIterable {
     case sent
     case received
 
     var title: String {
         switch self {
-        case .sent: return String(localized: "I sent")
-        case .received: return String(localized: "I received")
+        case .sent: return String(localized: "You sent")
+        case .received: return String(localized: "You received")
         }
     }
 }

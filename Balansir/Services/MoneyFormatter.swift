@@ -26,7 +26,7 @@ enum MoneyFormatter {
         (amount < 0 ? "\u{2212}" : "") + format(amount, currency: currency, locale: locale)
     }
 
-    /// Долг со знаком (§4.11): «+500 ₽» — мне должны, «−177 219 ₽» — я должен, «0 ₽» — без знака.
+    /// Долг со знаком (§4.11): «+500 ₽» — вам должны, «−177 219 ₽» — вы должны, «0 ₽» — без знака.
     static func debt(_ amount: Decimal, currency: String = "RUB", locale: Locale = .current) -> String {
         sign(of: amount) + format(amount, currency: currency, locale: locale)
     }

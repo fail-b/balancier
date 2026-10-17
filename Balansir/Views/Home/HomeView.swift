@@ -264,12 +264,12 @@ struct HomeView: View {
         }
     }
 
-    /// Hero в режиме долгов (§4.11): «Мне должны» и «Я должен» — по всем контрагентам или по выбранному.
+    /// Hero в режиме долгов (§4.11): «Вам должны» и «Вы должны» — по всем контрагентам или по выбранному.
     private var debtHeroCard: some View {
         let totals = viewModel.heroDebtTotals
         return HStack(alignment: .lastTextBaseline) {
             VStack(alignment: .leading, spacing: Theme.Row.textSpacing) {
-                Text("Owed to me")
+                Text("Owed to you")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Colors.ink2)
                 Text(MoneyFormatter.format(totals.owedToMe))
@@ -281,7 +281,7 @@ struct HomeView: View {
             }
             Spacer(minLength: Theme.Spacing.s)
             VStack(alignment: .trailing, spacing: Theme.Row.textSpacing) {
-                Text("I owe")
+                Text("You owe")
                     .font(Theme.Font.caption)
                     .foregroundStyle(Theme.Colors.ink2)
                 Text(MoneyFormatter.format(totals.iOwe))

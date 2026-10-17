@@ -163,7 +163,7 @@ struct AddEntryView: View {
         }
     }
 
-    /// Сегмент «Я отправил / Мне пришли» у долга (§4.11).
+    /// Сегмент «Вы отправили / Вам пришли» у долга (§4.11).
     private var debtDirectionSegment: some View {
         segment(DebtDirection.allCases, title: \.title, isOptionActive: { viewModel.debtDirection == $0 }) {
             viewModel.debtDirection = $0
