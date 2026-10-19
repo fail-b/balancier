@@ -2465,34 +2465,6 @@
         }
       }
     },
-    "Import from CoinKeeper" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aus CoinKeeper importieren"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar de CoinKeeper"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importer depuis CoinKeeper"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импорт из CoinKeeper"
-          }
-        }
-      }
-    },
     "Income" : {
       "localizations" : {
         "de" : {

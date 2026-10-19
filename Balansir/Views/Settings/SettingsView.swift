@@ -54,7 +54,6 @@ struct SettingsView: View {
 
             Section {
                 stubAction("Export to CSV", icon: AppIcon.export)
-                stubAction("Import from CoinKeeper", icon: AppIcon.importData)
                 Button("Show welcome screens") { hasSeenOnboarding = false }
             } header: { sectionHeader("Data") }
 
