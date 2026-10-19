@@ -199,20 +199,23 @@ struct HomeView: View {
             if viewModel.entriesByDay.isEmpty {
                 emptyStateView
             } else {
-                ForEach(viewModel.entriesByDay) { group in
-                    DaySection(
-                        group: group,
-                        openRowId: $openSwipeRowId,
-                        onTap: { entry in
-                            editEntryVM = viewModel.makeAddEntryViewModel(for: entry)
-                        },
-                        onDelete: { entry in
-                            await viewModel.delete(entry: entry)
-                        },
-                        onTagTap: { tag in searchByTag(tag) }
-                    )
-                    .padding(.top, Theme.Spacing.xl)
-                    .padding(.horizontal, Theme.Spacing.l)
+                // Lazy (долг №15): строки создаются по мере прокрутки, а не все тысячи сразу.
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    ForEach(viewModel.entriesByDay) { group in
+                        DaySection(
+                            group: group,
+                            openRowId: $openSwipeRowId,
+                            onTap: { entry in
+                                editEntryVM = viewModel.makeAddEntryViewModel(for: entry)
+                            },
+                            onDelete: { entry in
+                                await viewModel.delete(entry: entry)
+                            },
+                            onTagTap: { tag in searchByTag(tag) }
+                        )
+                        .padding(.top, Theme.Spacing.xl)
+                        .padding(.horizontal, Theme.Spacing.l)
+                    }
                 }
             }
         }

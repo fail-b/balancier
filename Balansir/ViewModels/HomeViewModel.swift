@@ -48,18 +48,18 @@ struct MonthOption: Identifiable, Hashable {
 final class HomeViewModel {
     private(set) var accounts: [AccountModel] = []
     private(set) var categories: [CategoryModel] = []
-    private var allEntries: [EntryModel] = []
+    private var allEntries: [EntryModel] = [] { didSet { refreshFeed() } }
     private(set) var balances: [UUID: Decimal] = [:]
     private(set) var todayExpense: Decimal = 0
     private(set) var monthExpense: Decimal = 0
     private(set) var monthIncome: Decimal = 0
-    var selectedAccountId: UUID? = nil
+    var selectedAccountId: UUID? = nil { didSet { refreshFeed() } }
     /// Месяц, выбранный в шапке (начало месяца). nil — «Все операции»: бесконечная лента, hero — текущий месяц.
-    var selectedMonth: Date? = nil
+    var selectedMonth: Date? = nil { didSet { refreshFeed() } }
     /// Начала месяцев для выбора: от месяца первой операции до текущего, от свежих к ранним.
     private(set) var monthStarts: [Date] = []
-    var searchQuery: String = ""
-    var isSearchActive: Bool = false
+    var searchQuery: String = "" { didSet { refreshFeed() } }
+    var isSearchActive: Bool = false { didSet { refreshFeed() } }
     /// Запрос фокуса на поле поиска (активация жестом): шапка ставит фокус и сбрасывает флаг.
     var shouldFocusSearch: Bool = false
     var errorMessage: String?
@@ -124,9 +124,9 @@ final class HomeViewModel {
     // MARK: - Карусель: счета и «Долги» (§4.1.3, §4.11)
 
     /// Фильтр «Долги»: в ленте только операции-долги. Взаимоисключающий с фильтром счёта.
-    private(set) var isDebtFilterActive = false
+    private(set) var isDebtFilterActive = false { didSet { refreshFeed() } }
     /// Контрагент во второй карусели (только при фильтре «Долги»); nil — все долги.
-    private(set) var selectedCounterpartyId: UUID?
+    private(set) var selectedCounterpartyId: UUID? { didSet { refreshFeed() } }
     /// Контрагенты для каруселей (без удалённых), по порядку.
     private(set) var counterparties: [CounterpartyModel] = []
     /// Долги по контрагентам: `+` — вам должны.
@@ -259,10 +259,9 @@ final class HomeViewModel {
         }
     }
 
-    // Подходит ли операция под выбранный месяц. В поиске фильтр месяца не действует — ищем по всей истории.
-    private func monthMatches(_ entry: EntryModel) -> Bool {
-        guard !isSearchActive, let month = selectedMonth else { return true }
-        let interval = StatisticsService.monthInterval(containing: month, calendar: .current)
+    // Подходит ли операция под выбранный месяц (nil — фильтра нет). В поиске фильтр месяца не действует.
+    private func monthMatches(_ entry: EntryModel, interval: DateInterval?) -> Bool {
+        guard let interval else { return true }
         return entry.date >= interval.start && entry.date < interval.end
     }
 
@@ -272,8 +271,24 @@ final class HomeViewModel {
     }
 
     /// Лента с учётом фильтра по счёту (карусель), месяца (шапка) И поискового запроса.
-    var filteredEntries: [EntryModel] {
-        let byAccount = allEntries.filter { accountMatches($0) && debtMatches($0) && monthMatches($0) }
+    /// Кэш (долг №15): пересчитывается в `refreshFeed()` при изменении данных, запроса или фильтров,
+    /// а не при каждом обращении из `body` — операций тысячи.
+    private(set) var filteredEntries: [EntryModel] = []
+    /// Лента по дням — кэш, как `filteredEntries`.
+    private(set) var entriesByDay: [DayGroup] = []
+
+    private func refreshFeed() {
+        filteredEntries = computeFilteredEntries()
+        entriesByDay = DayGroup.grouped(from: filteredEntries)
+    }
+
+    private func computeFilteredEntries() -> [EntryModel] {
+        let monthInterval = isSearchActive ? nil : selectedMonth.map {
+            StatisticsService.monthInterval(containing: $0, calendar: .current)
+        }
+        let byAccount = allEntries.filter {
+            accountMatches($0) && debtMatches($0) && monthMatches($0, interval: monthInterval)
+        }
         var query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         // «#тег» — поиск только по тегам (так теги показаны в ленте, §4.3); без «#» — по всем полям.
         let tagsOnly = query.hasPrefix("#")
@@ -340,10 +355,6 @@ final class HomeViewModel {
     private func amountMatches(_ entry: EntryModel, numericNeedle: String) -> Bool {
         let amountString = amountSearchFormatter.string(from: entry.amount as NSDecimalNumber) ?? ""
         return amountString.hasPrefix(numericNeedle)
-    }
-
-    var entriesByDay: [DayGroup] {
-        DayGroup.grouped(from: filteredEntries)
     }
 
     var heroSegments: [CategorySegment] {
